@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer Platform — Request Environment</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="8" fill="#2563eb"/>
+          <path d="M8 16L14 10L20 16L14 22L8 16Z" fill="white" opacity="0.9"/>
+          <path d="M14 16L20 10L26 16L20 22L14 16Z" fill="white" opacity="0.5"/>
+        </svg>
+        <span>Dev Platform</span>
+      </div>
+      <nav>
+        <a href="#" class="nav-link active">Request Environment</a>
+        <a href="#" class="nav-link">My Environments</a>
+        <a href="#" class="nav-link">Docs</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="page-header">
+        <h1>Request a New Environment</h1>
+        <p>Provision an isolated Kubernetes namespace with Entra ID access and Grafana monitoring — ready in ~5 minutes.</p>
+      </div>
+
+      <div class="card">
+        <form id="envForm" novalidate>
+          <div class="form-section">
+            <h2>Team &amp; Project</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="team">Team Name <span class="required">*</span></label>
+                <input type="text" id="team" name="team" placeholder="e.g. payments" required
+                       pattern="[a-z0-9-]+" maxlength="24" autocomplete="off" />
+                <span class="hint">Lowercase letters, numbers, and hyphens only</span>
+              </div>
+              <div class="form-group">
+                <label for="project">Project Name <span class="required">*</span></label>
+                <input type="text" id="project" name="project" placeholder="e.g. checkout-api" required
+                       pattern="[a-z0-9-]+" maxlength="24" autocomplete="off" />
+                <span class="hint">Lowercase letters, numbers, and hyphens only</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="owner_email">Owner Email <span class="required">*</span></label>
+              <input type="email" id="owner_email" name="owner_email"
+                     placeholder="you@example.com" required />
+              <span class="hint">Provisioning confirmation and kubeconfig sent here</span>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h2>Resource Limits</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cpu_limit">CPU Limit <span class="required">*</span></label>
+                <select id="cpu_limit" name="cpu_limit" required>
+                  <option value="0.5">0.5 cores</option>
+                  <option value="1">1 core</option>
+                  <option value="2" selected>2 cores</option>
+                  <option value="4">4 cores</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="memory_limit">Memory Limit <span class="required">*</span></label>
+                <select id="memory_limit" name="memory_limit" required>
+                  <option value="512Mi">512 MiB</option>
+                  <option value="1Gi">1 GiB</option>
+                  <option value="2Gi" selected>2 GiB</option>
+                  <option value="4Gi">4 GiB</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section preview-section">
+            <h2>What You'll Get</h2>
+            <ul class="checklist">
+              <li>K8s namespace <code id="preview-name">—</code></li>
+              <li>ResourceQuota and LimitRange</li>
+              <li>NetworkPolicy (deny-all ingress)</li>
+              <li>Azure Entra ID group for access control</li>
+              <li>Grafana dashboard (CPU, memory, pod count)</li>
+              <li>kubeconfig snippet via email</li>
+            </ul>
+          </div>
+
+          <div id="errorBanner" class="banner banner-error hidden"></div>
+          <div id="successBanner" class="banner banner-success hidden"></div>
+
+          <button type="submit" id="submitBtn" class="btn-primary">
+            <span class="btn-text">Request Environment</span>
+            <span class="btn-spinner hidden"></span>
+          </button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
