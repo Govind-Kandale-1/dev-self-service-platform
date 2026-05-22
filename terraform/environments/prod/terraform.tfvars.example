@@ -1,0 +1,3 @@
+region         = "eu-west-1"
+project        = "idp"
+tfstate_bucket = "idp-tfstate-<account-id>"

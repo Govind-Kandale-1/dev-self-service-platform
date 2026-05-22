@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - pip install ansible kubernetes -q
+      - ansible-galaxy collection install kubernetes.core -q
+      - curl -fsSL https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl
+      - chmod +x /usr/local/bin/kubectl
+      - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_REGION
+      - git clone https://github.com/Govind-Kandale-1/dev-self-service-platform.git /repo
+
+  build:
+    commands:
+      - |
+        ansible-playbook /repo/ansible/playbooks/configure-namespace.yml \
+          -e "env_id=$ENV_ID team=$TEAM" \
+          -e "namespace_name=${TEAM}-${PROJECT}-${ENV_ID}"
+
+  post_build:
+    commands:
+      - echo "Namespace $ENV_ID configured"
