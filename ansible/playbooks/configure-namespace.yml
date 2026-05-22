@@ -1,0 +1,17 @@
+---
+- name: Configure IDP namespace
+  hosts: localhost
+  connection: local
+  gather_facts: true
+
+  pre_tasks:
+    - name: Validate required variables
+      ansible.builtin.assert:
+        that:
+          - env_id is defined and env_id | length > 0
+          - team is defined and team | length > 0
+          - namespace_name is defined and namespace_name | length > 0
+        fail_msg: "env_id, team, and namespace_name must be provided"
+
+  roles:
+    - namespace-config

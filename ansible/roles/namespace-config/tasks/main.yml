@@ -1,0 +1,52 @@
+---
+- name: Wait for namespace to be active
+  kubernetes.core.k8s_info:
+    kind: Namespace
+    name: "{{ namespace_name }}"
+  register: ns_info
+  until: ns_info.resources | length > 0 and ns_info.resources[0].status.phase == "Active"
+  retries: 10
+  delay: 6
+
+- name: Apply platform ConfigMap
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: idp-config
+        namespace: "{{ namespace_name }}"
+        labels:
+          app.kubernetes.io/managed-by: idp
+      data:
+        ENV_ID: "{{ env_id }}"
+        TEAM: "{{ team }}"
+        NAMESPACE: "{{ namespace_name }}"
+
+- name: Apply pod disruption budget
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: default-pdb
+        namespace: "{{ namespace_name }}"
+      spec:
+        minAvailable: 1
+        selector:
+          matchLabels:
+            app.kubernetes.io/managed-by: idp
+
+- name: Annotate namespace with provisioning metadata
+  kubernetes.core.k8s:
+    state: patched
+    kind: Namespace
+    name: "{{ namespace_name }}"
+    definition:
+      metadata:
+        annotations:
+          idp/provisioned-at: "{{ ansible_date_time.iso8601 }}"
+          idp/provisioned-by: "idp-ansible"
+          idp/team: "{{ team }}"
