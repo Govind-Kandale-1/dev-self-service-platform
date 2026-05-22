@@ -1,0 +1,51 @@
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+.terraform.lock.hcl
+*.tfvars
+!*.tfvars.example
+terraform.tfplan
+override.tf
+override.tf.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+dist/
+*.egg-info/
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Lambda build artifacts
+lambda/**/package/
+lambda/**/*.zip
+
+# Ansible
+ansible/*.retry
+ansible/roles/*/files/*.pem
+
+# Node / UI tooling
+node_modules/
+.parcel-cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Secrets
+*.pem
+*.key
+*.p12
+secrets.json
