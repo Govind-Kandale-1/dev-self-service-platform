@@ -1,0 +1,131 @@
+{
+  "Comment": "IDP environment provisioning workflow",
+  "StartAt": "ProvisionNamespace",
+  "States": {
+    "ProvisionNamespace": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::codebuild:startBuild.sync",
+      "Parameters": {
+        "ProjectName.$": "$.terraform_namespace_project",
+        "EnvironmentVariablesOverride": [
+          { "Name": "ENV_ID",        "Value.$": "$.env_id",       "Type": "PLAINTEXT" },
+          { "Name": "TEAM",          "Value.$": "$.team",         "Type": "PLAINTEXT" },
+          { "Name": "PROJECT",       "Value.$": "$.project",      "Type": "PLAINTEXT" },
+          { "Name": "CPU_LIMIT",     "Value.$": "$.cpu_limit",    "Type": "PLAINTEXT" },
+          { "Name": "MEMORY_LIMIT",  "Value.$": "$.memory_limit", "Type": "PLAINTEXT" }
+        ]
+      },
+      "ResultPath": "$.codebuild_tf_result",
+      "Next": "ConfigureNamespace",
+      "Catch": [{
+        "ErrorEquals": ["States.ALL"],
+        "Next": "HandleFailure",
+        "ResultPath": "$.error"
+      }]
+    },
+
+    "ConfigureNamespace": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::codebuild:startBuild.sync",
+      "Parameters": {
+        "ProjectName.$": "$.ansible_namespace_project",
+        "EnvironmentVariablesOverride": [
+          { "Name": "ENV_ID",   "Value.$": "$.env_id",  "Type": "PLAINTEXT" },
+          { "Name": "TEAM",     "Value.$": "$.team",    "Type": "PLAINTEXT" },
+          { "Name": "PROJECT",  "Value.$": "$.project", "Type": "PLAINTEXT" }
+        ]
+      },
+      "ResultPath": "$.codebuild_ansible_result",
+      "Next": "EntraAndGrafana",
+      "Catch": [{
+        "ErrorEquals": ["States.ALL"],
+        "Next": "HandleFailure",
+        "ResultPath": "$.error"
+      }]
+    },
+
+    "EntraAndGrafana": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "CreateEntraGroup",
+          "States": {
+            "CreateEntraGroup": {
+              "Type": "Task",
+              "Resource": "${entra_lambda_arn}",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "ProvisionGrafanaDashboard",
+          "States": {
+            "ProvisionGrafanaDashboard": {
+              "Type": "Task",
+              "Resource": "${grafana_lambda_arn}",
+              "End": true
+            }
+          }
+        }
+      ],
+      "ResultPath": "$.parallel_results",
+      "Next": "MergeResults",
+      "Catch": [{
+        "ErrorEquals": ["States.ALL"],
+        "Next": "HandleFailure",
+        "ResultPath": "$.error"
+      }]
+    },
+
+    "MergeResults": {
+      "Type": "Pass",
+      "Parameters": {
+        "env_id.$":               "$.env_id",
+        "team.$":                 "$.team",
+        "project.$":              "$.project",
+        "owner_email.$":          "$.owner_email",
+        "cpu_limit.$":            "$.cpu_limit",
+        "memory_limit.$":         "$.memory_limit",
+        "entra_group_id.$":       "$.parallel_results[0].group_id",
+        "entra_group_name.$":     "$.parallel_results[0].group_name",
+        "grafana_dashboard_url.$":"$.parallel_results[1].dashboard_url",
+        "status":                 "READY"
+      },
+      "Next": "UpdateStatus"
+    },
+
+    "UpdateStatus": {
+      "Type": "Task",
+      "Resource": "${update_status_lambda_arn}",
+      "Next": "NotifyDeveloper",
+      "Catch": [{
+        "ErrorEquals": ["States.ALL"],
+        "Next": "HandleFailure",
+        "ResultPath": "$.error"
+      }]
+    },
+
+    "NotifyDeveloper": {
+      "Type": "Task",
+      "Resource": "${notify_lambda_arn}",
+      "End": true
+    },
+
+    "HandleFailure": {
+      "Type": "Task",
+      "Resource": "${update_status_lambda_arn}",
+      "Parameters": {
+        "env_id.$": "$.env_id",
+        "status":   "FAILED",
+        "error.$":  "$.error"
+      },
+      "Next": "ProvisioningFailed"
+    },
+
+    "ProvisioningFailed": {
+      "Type": "Fail",
+      "Error": "ProvisioningFailed",
+      "Cause": "One or more provisioning steps failed. Check DynamoDB for details."
+    }
+  }
+}
